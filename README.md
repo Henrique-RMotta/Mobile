@@ -1,2 +1,2 @@
 # Mobile
-PDM - Programação de dispositivos Mobile - 3DEVT - SENAISP 
+PDM - Programação de dispositivos Móveis - 3DEVT - SENAISP 
