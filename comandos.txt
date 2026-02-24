@@ -1,2 +1,5 @@
 - saude do flutter
 -> flutter doctor
+
+- criar projeto em flutter
+-> flutter create {nome do projeto}
