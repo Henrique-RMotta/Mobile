@@ -23,11 +23,11 @@ class TodoPage extends StatefulWidget {
 class _TodoPageState extends State<TodoPage> {
   final List<String> lista_tarefas = [];
   final TextEditingController _textEditingController = TextEditingController();
-  int contadorTarefas = 0;
+  int contadorTarefas = 0; // desafio extra 2
   void adicionarTarefa() {
     setState(() {
       if (_textEditingController.text != "") {
-        // desafio 1
+        // desafio extra 1
         lista_tarefas.add(_textEditingController.text);
         contadorTarefas++;
       }
@@ -46,14 +46,14 @@ class _TodoPageState extends State<TodoPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Lista de Tarefas - ${(contadorTarefas > 0) ? contadorTarefas : "não há nenhuma tarefa"}",
+          "Lista de Tarefas - ${(contadorTarefas > 0) ? contadorTarefas : "não há nenhuma tarefa"}", // desafio extra  4
         ),
       ),
       body: Column(
         children: [
           TextField(
             controller: _textEditingController,
-            onSubmitted: (_) => adicionarTarefa(),
+            onSubmitted: (_) => adicionarTarefa(), // desafio extra 3
           ),
           ElevatedButton(
             onPressed: adicionarTarefa,
