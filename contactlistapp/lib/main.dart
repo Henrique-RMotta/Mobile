@@ -125,3 +125,4 @@ class Detalhes extends StatelessWidget {
     );
   }
 }
+
