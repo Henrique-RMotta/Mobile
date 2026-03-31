@@ -3,3 +3,6 @@
 
 - criar projeto em flutter
 -> flutter create {nome do projeto}
+
+- downloadar as dependências
+-> flutter pub get
