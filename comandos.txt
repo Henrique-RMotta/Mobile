@@ -6,3 +6,6 @@
 
 - downloadar as dependências
 -> flutter pub get
+
+- rodar o projeto 
+-> flutter run 
