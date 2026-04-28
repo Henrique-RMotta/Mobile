@@ -19,7 +19,7 @@ class _randomAppState extends State<randomApp> {
     });
   }
 
-  @override>
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(title: Text('Meu App com número aleatório'),
