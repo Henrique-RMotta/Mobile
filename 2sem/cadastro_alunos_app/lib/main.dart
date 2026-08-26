@@ -17,17 +17,26 @@ class _AppCadAlunosState extends State<AppCadAlunos> {
   TextEditingController controllerNome = TextEditingController();
   TextEditingController controllerIdade = TextEditingController();
   TextEditingController controllerCurso = TextEditingController();
+  TextEditingController controllerEmail = TextEditingController();
+  TextEditingController controllerPesquisa = TextEditingController();
+  String termoPesquisa = "";
 
   @override
   void initState() {
     super.initState();
   }
 
-  Future<void> cadastrarAluno(String nome, String idade, String curso) async {
+  Future<void> cadastrarAluno(
+    String nome,
+    String idade,
+    String curso,
+    String email,
+  ) async {
     await FirebaseFirestore.instance.collection("alunos").add({
       "nome": nome,
       "idade": int.parse(idade),
       "curso": curso,
+      "email": email,
     });
   }
 
@@ -40,11 +49,13 @@ class _AppCadAlunosState extends State<AppCadAlunos> {
     String nome,
     String idade,
     String curso,
+    String email,
   ) async {
     await FirebaseFirestore.instance.collection("alunos").doc(id).update({
       "nome": nome,
       "idade": int.parse(idade),
       "curso": curso,
+      "email": email,
     });
   }
 
@@ -53,6 +64,7 @@ class _AppCadAlunosState extends State<AppCadAlunos> {
     String nomeAtual,
     String idadeAtual,
     String cursoAtual,
+    String emailAtual,
   ) {
     TextEditingController controllerNome = TextEditingController(
       text: nomeAtual,
@@ -62,6 +74,9 @@ class _AppCadAlunosState extends State<AppCadAlunos> {
     );
     TextEditingController controllerCurso = TextEditingController(
       text: cursoAtual,
+    );
+    TextEditingController controllerEmail = TextEditingController(
+      text: emailAtual,
     );
 
     showDialog(
@@ -95,6 +110,15 @@ class _AppCadAlunosState extends State<AppCadAlunos> {
                   border: OutlineInputBorder(),
                 ),
               ),
+              SizedBox(height: 10),
+              TextField(
+                controller: controllerEmail,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: "E-mail",
+                  border: OutlineInputBorder(),
+                ),
+              ),
             ],
           ),
           actions: [
@@ -109,6 +133,7 @@ class _AppCadAlunosState extends State<AppCadAlunos> {
                   controllerNome.text,
                   controllerIdade.text,
                   controllerCurso.text,
+                  controllerEmail.text,
                 );
                 Navigator.pop(context);
               },
@@ -151,12 +176,36 @@ class _AppCadAlunosState extends State<AppCadAlunos> {
       appBar: AppBar(title: Text("Cadastrar Alunos")),
       body: Column(
         children: [
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection("alunos").snapshots(),
+            builder: (context, snapshot) {
+              final totalAlunos = snapshot.data?.docs.length ?? 0;
+              return Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Text(
+                  "Total de alunos: $totalAlunos",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              );
+            },
+          ),
           Padding(
             padding: const EdgeInsets.all(10),
             child: TextField(
               controller: controllerNome,
               decoration: InputDecoration(
                 labelText: "Nome do Aluno",
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: TextField(
+              controller: controllerEmail,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                labelText: "E-mail",
                 border: OutlineInputBorder(),
               ),
             ),
@@ -198,12 +247,30 @@ class _AppCadAlunosState extends State<AppCadAlunos> {
                 controllerNome.text,
                 controllerIdade.text,
                 controllerCurso.text,
+                controllerEmail.text,
               );
               controllerNome.clear();
               controllerIdade.clear();
               controllerCurso.clear();
+              controllerEmail.clear();
             },
             child: Text("Cadastrar"),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: TextField(
+              controller: controllerPesquisa,
+              onChanged: (valor) {
+                setState(() {
+                  termoPesquisa = valor;
+                });
+              },
+              decoration: InputDecoration(
+                labelText: "Pesquisar aluno",
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+            ),
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -214,16 +281,23 @@ class _AppCadAlunosState extends State<AppCadAlunos> {
                 if (!snapshot.hasData) {
                   return CircularProgressIndicator();
                 }
-                final docs = snapshot.data!.docs;
+                final docs = snapshot.data!.docs.where((aluno) {
+                  final dadosAluno = aluno.data() as Map<String, dynamic>;
+                  final nome =
+                      dadosAluno["nome"]?.toString().toLowerCase() ?? "";
+                  return nome.contains(termoPesquisa.toLowerCase());
+                }).toList();
                 return ListView.builder(
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final aluno = docs[index];
+                    final dadosAluno = aluno.data() as Map<String, dynamic>;
+                    final email = dadosAluno["email"] as String? ?? "";
                     return Card(
                       child: ListTile(
                         title: Text(aluno["nome"]),
                         subtitle: Text(
-                          "${aluno["idade"]} anos - ${aluno["curso"]}",
+                          "${aluno["idade"]} anos - ${aluno["curso"]}\n$email",
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -235,6 +309,7 @@ class _AppCadAlunosState extends State<AppCadAlunos> {
                                 aluno["nome"],
                                 aluno["idade"].toString(),
                                 aluno["curso"],
+                                email,
                               ),
                             ),
                             IconButton(
