@@ -35,52 +35,116 @@ class _AppCadAlunosState extends State<AppCadAlunos> {
     await FirebaseFirestore.instance.collection("alunos").doc(id).delete();
   }
 
-  Future<void> editarAluno(String id, String nome, String idade, String curso) async {
-  await FirebaseFirestore.instance.collection("alunos").doc(id).update({
-    "nome": nome,
-    "idade": int.parse(idade),
-    "curso": curso,
-  });
-}
+  Future<void> editarAluno(
+    String id,
+    String nome,
+    String idade,
+    String curso,
+  ) async {
+    await FirebaseFirestore.instance.collection("alunos").doc(id).update({
+      "nome": nome,
+      "idade": int.parse(idade),
+      "curso": curso,
+    });
+  }
 
-void abrirDialogEdicao(String id, String nomeAtual, String idadeAtual, String cursoAtual) {
- TextEditingController controllerNome = TextEditingController();
-  TextEditingController controllerIdade = TextEditingController();
-  TextEditingController controllerCurso = TextEditingController();
-  
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: Text("Editar Aluno"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-TextField(
-              controller: controllerNome,
-              decoration: InputDecoration(
-                labelText: "Nome do Aluno",
-                border: OutlineInputBorder(),
+  void abrirDialogEdicao(
+    String id,
+    String nomeAtual,
+    String idadeAtual,
+    String cursoAtual,
+  ) {
+    TextEditingController controllerNome = TextEditingController(
+      text: nomeAtual,
+    );
+    TextEditingController controllerIdade = TextEditingController(
+      text: idadeAtual,
+    );
+    TextEditingController controllerCurso = TextEditingController(
+      text: cursoAtual,
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Editar Aluno"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controllerNome,
+                decoration: InputDecoration(
+                  labelText: "Nome do Aluno",
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Cancelar"),
+              SizedBox(height: 10),
+              TextField(
+                controller: controllerIdade,
+                decoration: InputDecoration(
+                  labelText: "Idade do Aluno",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 10),
+              TextField(
+                controller: controllerCurso,
+                decoration: InputDecoration(
+                  labelText: "Nome do Curso",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              // chame editarAluno() com os valores dos novos controllers
-              // depois feche o dialog com Navigator.pop(context)
-            },
-            child: Text("Salvar"),
-          ),
-        ],
-      );
-    },
-  );
-}
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancelar"),
+            ),
+            TextButton(
+              onPressed: () {
+                editarAluno(
+                  id,
+                  controllerNome.text,
+                  controllerIdade.text,
+                  controllerCurso.text,
+                );
+                Navigator.pop(context);
+              },
+              child: Text("Salvar"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void confirmarExclusao(String id) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Confirmar exclusão"),
+          content: Text("Deseja realmente excluir este aluno?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancelar"),
+            ),
+            TextButton(
+              onPressed: () {
+                deletarAluno(id);
+                Navigator.pop(context);
+              },
+              child: Text("Excluir"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,6 +161,7 @@ TextField(
               ),
             ),
           ),
+          SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.all(10),
             child: TextField(
@@ -107,6 +172,7 @@ TextField(
               ),
             ),
           ),
+          SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.all(10),
             child: TextField(
@@ -117,21 +183,28 @@ TextField(
               ),
             ),
           ),
+          SizedBox(height: 10),
           ElevatedButton(
             onPressed: () {
-              if (controllerNome.text.isNotEmpty &&
-                  controllerCurso.text.isNotEmpty &&
-                  controllerIdade.text.isNotEmpty) {
-                cadastrarAluno(
-                  controllerNome.text,
-                  controllerIdade.text,
-                  controllerCurso.text,
+              if (controllerNome.text.isEmpty ||
+                  controllerIdade.text.isEmpty ||
+                  controllerCurso.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Preencha todos os campos!")),
                 );
+                return;
               }
+              cadastrarAluno(
+                controllerNome.text,
+                controllerIdade.text,
+                controllerCurso.text,
+              );
+              controllerNome.clear();
+              controllerIdade.clear();
+              controllerCurso.clear();
             },
             child: Text("Cadastrar"),
           ),
-
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -142,25 +215,38 @@ TextField(
                   return CircularProgressIndicator();
                 }
                 final docs = snapshot.data!.docs;
-                return  ListView.builder(
-                    itemCount: docs.length,
-                    itemBuilder: (context, index) {
-                      final aluno = docs[index];
-                      return Card(
-                        child: ListTile(
-                          title: Text(aluno["nome"]),
-                          subtitle: Text(
-                            "${aluno["idade"]} anos - ${aluno["curso"]}",
-                          ),
-                          trailing: IconButton(
-                            icon: Icon(Icons.delete),
-                            onPressed: () => deletarAluno(aluno.id),
-                          ),
+                return ListView.builder(
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final aluno = docs[index];
+                    return Card(
+                      child: ListTile(
+                        title: Text(aluno["nome"]),
+                        subtitle: Text(
+                          "${aluno["idade"]} anos - ${aluno["curso"]}",
                         ),
-                      );
-                    },
-                  );
-          
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.edit),
+                              onPressed: () => abrirDialogEdicao(
+                                aluno.id,
+                                aluno["nome"],
+                                aluno["idade"].toString(),
+                                aluno["curso"],
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete),
+                              onPressed: () => confirmarExclusao(aluno.id),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
               },
             ),
           ),
